@@ -17,7 +17,7 @@ ADMIN_SIFRE = "1924.Blds"
 if "giris_yapildi" not in st.session_state:
     st.session_state["giris_yapildi"] = False
 
-# Veri Yapısı Başlangıcı (Stoklar sıfırlandı, kullanıcı kendisi belirleyecek)
+# Veri Yapısı Başlangıcı (Stoklar sıfırlandı)
 if "stoklar" not in st.session_state:
     st.session_state["stoklar"] = {
         "UTAX 2507": {
@@ -213,7 +213,7 @@ if col_m4.button("🔒 Oturumu Kapat"):
 
 st.markdown("---")
 
-# YATAY SEKMELER (Ayrı ayrı başlıklar halinde)
+# YATAY SEKMELER
 sekme1, sekme2, sekme3, sekme4, sekme5 = st.tabs(
     [
         "📦 Mevcut Stok Durumu",
@@ -272,10 +272,6 @@ with sekme2:
             "Teslim Edilen Birim",
             placeholder="Örn: Yazı İşleri Müdürlüğü vb.",
         )
-        cihaz_lokasyon = st.text_input(
-            "Cihaz Lokasyonu / Seri No",
-            placeholder="Örn: Oda 203 / Cihaz Seri No veya IP",
-        )
         islem_notu = st.text_input("Açıklama / Not", placeholder="İsteğe bağlı")
 
         submit_islem = st.form_submit_button("İşlemi Gerçekleştir")
@@ -303,9 +299,6 @@ with sekme2:
                         "Miktar": miktar,
                         "İşlem": islem_tipi,
                         "Birim": birim_adi if birim_adi else "Belirtilmedi",
-                        "Cihaz/Lokasyon": (
-                            cihaz_lokasyon if cihaz_lokasyon else "-"
-                        ),
                         "Not": islem_notu,
                     }
                     st.session_state["gecmis"].insert(0, kayit)
@@ -387,7 +380,6 @@ with sekme4:
 
         if st.button("Seçilen Hatalı İşlemi Sil ve Stoğu Geri Yükle"):
             silinen = st.session_state["gecmis"].pop(silinecek_index)
-            # Eğer silinen işlem birime verme (düşme) ise stoğa geri ekle
             if "Birime Ver" in silinen["İşlem"]:
                 m = silinen["Model"]
                 r = silinen["Renk"]
@@ -413,46 +405,4 @@ with sekme5:
             data=csv_veri,
             file_name=(
                 "kaman_toner_raporu_"
-                f"{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-            ),
-            mime="text/csv",
-        )
-
-        st.markdown("---")
-        st.subheader("📄 Resmi Toner Teslim Tutanağı Oluştur")
-        secilen_islem_index = st.selectbox(
-            "Tutanak oluşturulacak dağıtımı seçin:",
-            range(len(st.session_state["gecmis"])),
-            format_func=lambda x: (
-                f"{st.session_state['gecmis'][x]['Tarih']} -"
-                f" {st.session_state['gecmis'][x]['Birim']} -"
-                f" {st.session_state['gecmis'][x]['Model']}"
-                f" ({st.session_state['gecmis'][x]['Renk']})"
-            ),
-            key="tutanak_select",
-        )
-
-        secilen_kayit = st.session_state["gecmis"][secilen_islem_index]
-
-        st.markdown(
-            f"""
-            <div style="background: rgba(30, 41, 59, 0.9); padding: 25px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); color: white;">
-                <h3 style="text-align: center; margin-bottom: 5px;">KAMAN BELEDİYESİ</h3>
-                <h4 style="text-align: center; color: #94a3b8; margin-top: 0;">BİLGİ İŞLEM BİRİMİ - TONER TESLİM TUTANAĞI</h4>
-                <hr style="border-color: rgba(255,255,255,0.2);">
-                <p><b>Tarih / Saat:</b> {secilen_kayit['Tarih']}</p>
-                <p><b>Teslim Alan Birim:</b> {secilen_kayit['Birim']}</p>
-                <p><b>Cihaz / Lokasyon:</b> {secilen_kayit['Cihaz/Lokasyon']}</p>
-                <p><b>Malzeme Detayı:</b> {secilen_kayit['Model']} - {secilen_kayit['Renk']} ({secilen_kayit['Miktar']} Adet)</p>
-                <p><b>Açıklama:</b> {secilen_kayit['Not'] if secilen_kayit['Not'] else '-'}</p>
-                <br><br>
-                <div style="display: flex; justify-content: space-between; margin-top: 40px;">
-                    <div><b>Teslim Eden (Bilgi İşlem):</b><br><br>İmza: ........................</div>
-                    <div><b>Teslim Alan (Birim Yetkilisi):</b><br><br>İmza: ........................</div>
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    else:
-        st.info("Henüz bir işlem yapılmadığı için rapor ve tutanak oluşturulamaz.")
+                f"{datetime.now().strftime('%Y%m%d_%H%
