@@ -182,7 +182,7 @@ st.markdown(
 st.title("🖨️ Kaman Belediyesi - UTAX Toner & Envanter Takip Sistemi")
 st.markdown("---")
 
-# 1. KRİTİK STOK ALARMI (3 ve altı olanlar için üstte kırmızı uyarı banner'ı)
+# KRİTİK STOK ALARMI (3 ve altı)
 kritik_urunler = []
 for m_ad, r_dict in st.session_state["stoklar"].items():
     for r_ad, st_adet in r_dict.items():
@@ -191,12 +191,12 @@ for m_ad, r_dict in st.session_state["stoklar"].items():
 
 if kritik_urunler:
     st.error(
-        "🚨 **Kritik Stok Alarmı:** Aşağıdaki tonerlerin stoku 3 adedin altına"
-        " düşmüştür!\n\n"
+        "🚨 **Kritik Stok Alarmı:** Aşağıdaki tonerlerin stoku 3 adedin"
+        " altındadır!\n\n"
         + "\n".join(kritik_urunler)
     )
 
-# Üst Özet Hesaplamaları ve Paneli
+# Üst Özet Paneli
 toplam_stok = sum(
     sum(stoklar_dict.values())
     for stoklar_dict in st.session_state["stoklar"].values()
@@ -213,13 +213,18 @@ if col_m4.button("🔒 Oturumu Kapat"):
 
 st.markdown("---")
 
-# BAŞLIKLAR (YAN YANA / YATAY SEKMELER) - Kaman Belediyesi yazısının altında
-sekme1, sekme2 = st.tabs(
-    ["📦 Stok Durumu & Manuel İşlemler", "📋 İşlem Geçmişi, Rapor & Tutanak"]
+# YATAY SEKMELER
+sekme1, sekme2, sekme3, sekme4 = st.tabs(
+    [
+        "📦 Mevcut Stok Durumu",
+        "🔄 Manuel Stok Ekle & Birime Ver",
+        "📊 Yıl İçinde Sarfiyat Grafikleri",
+        "📋 İşlem Geçmişi, Arama, Rapor & Tutanak",
+    ]
 )
 
 with sekme1:
-    st.subheader("📊 Mevcut Stok Durumu (Yazıcı Bazlı Detaylar)")
+    st.subheader("📊 Yazıcı Bazlı Mevcut Toner Stokları")
     st.markdown(
         "Yazıcı adlarının üzerine tıklayarak detaylı stok durumlarını"
         " görebilirsiniz."
@@ -238,8 +243,12 @@ with sekme1:
             df_model = pd.DataFrame(tablo_verisi)
             st.dataframe(df_model, use_container_width=True, hide_index=True)
 
-    st.markdown("---")
-    st.subheader("🔄 Manuel Stok Ekleme / Çıkarma ve Birime Teslim")
+with sekme2:
+    st.subheader("🔄 Manuel Stok Ekleme / Çıkarma ve Birime Teslim Paneli")
+    st.markdown(
+        "Bu alandan stoğa yeni toner ekleyebilir veya birimlere çıkış"
+        " yapabilirsiniz."
+    )
 
     with st.form("stok_islem_formu"):
         c1, c2, c3, c4 = st.columns(4)
@@ -262,7 +271,6 @@ with sekme1:
             "Teslim Edilen Birim",
             placeholder="Örn: Yazı İşleri Müdürlüğü vb.",
         )
-        # 2. CİHAZ / LOKASYON TAKİBİ
         cihaz_lokasyon = st.text_input(
             "Cihaz Lokasyonu / Seri No",
             placeholder="Örn: Oda 203 / Cihaz Seri No veya IP",
@@ -308,12 +316,57 @@ with sekme1:
                 else:
                     st.error(f"❌ Yetersiz stok! Mevcut stok: {mevcut}")
 
-with sekme2:
-    st.subheader("📋 Birim Dağıtım ve İşlem Geçmişi (Yedekleme & Rapor)")
+with sekme3:
+    st.subheader("📊 Yıl İçinde Birim ve Model Bazlı Sarfiyat Grafikleri")
+    if len(st.session_state["gecmis"]) > 0:
+        df_grafik = pd.DataFrame(st.session_state["gecmis"])
+        df_verilen = df_grafik[df_grafik["İşlem"].str.contains("Birime Ver")]
+
+        if not df_verilen.empty:
+            col_g1, col_g2 = st.columns(2)
+            with col_g1:
+                st.markdown("##### 🏢 Birimlere Göre Yıllık Tüketim")
+                birim_ozet = df_verilen.groupby("Birim")["Miktar"].sum()
+                st.bar_chart(birim_ozet)
+            with col_g2:
+                st.markdown("##### 🖨️ Model Bazlı Yıllık Tüketim")
+                model_ozet = df_verilen.groupby("Model")["Miktar"].sum()
+                st.bar_chart(model_ozet)
+        else:
+            st.info(
+                "Henüz birimlere toner çıkışı yapılmadığı için grafik"
+                " oluşturulamadı."
+            )
+    else:
+        st.info("Grafik oluşturulabilmesi için işlem geçmişi gereklidir.")
+
+with sekme4:
+    st.subheader(
+        "📋 İşlem Geçmişi, Arama, Excel Raporlama & Resmi Tutanak"
+    )
 
     if len(st.session_state["gecmis"]) > 0:
+        # Arama ve Filtreleme Kutusu
+        arama_kelimesi = st.text_input(
+            "🔍 Geçmiş Kayıtlarda Ara (Birim, Model, Renk veya Not):",
+            placeholder="Örn: Yazı İşleri, Siyah...",
+        )
+
         df_gecmis = pd.DataFrame(st.session_state["gecmis"])
-        st.dataframe(df_gecmis, use_container_width=True, hide_index=True)
+
+        if arama_kelimesi:
+            # Büyük/küçük harf duyarsız arama filtresi
+            mask = df_gecmis.apply(
+                lambda row: row.astype(str)
+                .str.contains(arama_kelimesi, case=False)
+                .any(),
+                axis=1,
+            )
+            df_gosterilen = df_gecmis[mask]
+        else:
+            df_gosterilen = df_gecmis
+
+        st.dataframe(df_gosterilen, use_container_width=True, hide_index=True)
 
         # Excel / CSV Rapor ve Yedekleme Butonu
         csv_veri = df_gecmis.to_csv(index=False).encode("utf-8")
@@ -328,43 +381,44 @@ with sekme2:
         )
 
         st.markdown("---")
-        # 3. RESMİ TESLİM TUTANAĞI GÖRÜNTÜLEME
         st.subheader("📄 Resmi Toner Teslim Tutanağı")
-        secilen_islem_index = st.selectbox(
-            "Tutanak oluşturulacak dağıtımı seçin:",
-            range(len(st.session_state["gecmis"])),
-            format_func=lambda x: (
-                f"{st.session_state['gecmis'][x]['Tarih']} -"
-                f" {st.session_state['gecmis'][x]['Birim']} -"
-                f" {st.session_state['gecmis'][x]['Model']}"
-                f" ({st.session_state['gecmis'][x]['Renk']})"
-            ),
-        )
+        if not df_gosterilen.empty:
+            secilen_islem_index = st.selectbox(
+                "Tutanak oluşturulacak dağıtımı seçin:",
+                df_gosterilen.index.tolist(),
+                format_func=lambda x: (
+                    f"{df_gecmis.loc[x, 'Tarih']} -"
+                    f" {df_gecmis.loc[x, 'Birim']} -"
+                    f" {df_gecmis.loc[x, 'Model']} ({df_gecmis.loc[x, 'Renk']})"
+                ),
+            )
 
-        secilen_kayit = st.session_state["gecmis"][secilen_islem_index]
+            secilen_kayit = df_gecmis.loc[secilen_islem_index]
 
-        st.markdown(
-            f"""
-            <div style="background: rgba(30, 41, 59, 0.9); padding: 25px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); color: white;">
-                <h3 style="text-align: center; margin-bottom: 5px;">KAMAN BELEDİYESİ</h3>
-                <h4 style="text-align: center; color: #94a3b8; margin-top: 0;">BİLGİ İŞLEM BİRİMİ - TONER TESLİM TUTANAĞI</h4>
-                <hr style="border-color: rgba(255,255,255,0.2);">
-                <p><b>Tarih / Saat:</b> {secilen_kayit['Tarih']}</p>
-                <p><b>Teslim Alan Birim:</b> {secilen_kayit['Birim']}</p>
-                <p><b>Cihaz / Lokasyon:</b> {secilen_kayit['Cihaz/Lokasyon']}</p>
-                <p><b>Malzeme Detayı:</b> {secilen_kayit['Model']} - {secilen_kayit['Renk']} ({secilen_kayit['Miktar']} Adet)</p>
-                <p><b>Açıklama:</b> {secilen_kayit['Not'] if secilen_kayit['Not'] else '-'}</p>
-                <br><br>
-                <div style="display: flex; justify-content: space-between; margin-top: 40px;">
-                    <div><b>Teslim Eden (Bilgi İşlem):</b><br><br>İmza: ........................</div>
-                    <div><b>Teslim Alan (Birim Yetkilisi):</b><br><br>İmza: ........................</div>
+            st.markdown(
+                f"""
+                <div style="background: rgba(30, 41, 59, 0.9); padding: 25px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); color: white;">
+                    <h3 style="text-align: center; margin-bottom: 5px;">KAMAN BELEDİYESİ</h3>
+                    <h4 style="text-align: center; color: #94a3b8; margin-top: 0;">BİLGİ İŞLEM BİRİMİ - TONER TESLİM TUTANAĞI</h4>
+                    <hr style="border-color: rgba(255,255,255,0.2);">
+                    <p><b>Tarih / Saat:</b> {secilen_kayit['Tarih']}</p>
+                    <p><b>Teslim Alan Birim:</b> {secilen_kayit['Birim']}</p>
+                    <p><b>Cihaz / Lokasyon:</b> {secilen_kayit['Cihaz/Lokasyon']}</p>
+                    <p><b>Malzeme Detayı:</b> {secilen_kayit['Model']} - {secilen_kayit['Renk']} ({secilen_kayit['Miktar']} Adet)</p>
+                    <p><b>Açıklama:</b> {secilen_kayit['Not'] if secilen_kayit['Not'] else '-'}</p>
+                    <br><br>
+                    <div style="display: flex; justify-content: space-between; margin-top: 40px;">
+                        <div><b>Teslim Eden (Bilgi İşlem):</b><br><br>İmza: ........................</div>
+                        <div><b>Teslim Alan (Birim Yetkilisi):</b><br><br>İmza: ........................</div>
+                    </div>
                 </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+                """,
+                unsafe_allow_html=True,
+            )
+        else:
+            st.info("Arama kriterine uygun kayıt bulunamadı.")
     else:
         st.info(
-            "Henüz bir birime toner çıkışı yapılmadığı için tutanak veya rapor"
-            " oluşturulamadı."
+            "Henüz bir birime toner çıkışı yapılmadığı için işlem geçmişi,"
+            " arama ve tutanak bulunmuyor."
         )
