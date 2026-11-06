@@ -213,7 +213,7 @@ if col_m4.button("🔒 Oturumu Kapat"):
 
 st.markdown("---")
 
-# YATAY SEKMELER (Daha kısa ve ekrana tam sığan başlıklar)
+# YATAY SEKMELER
 sekme1, sekme2, sekme3, sekme4, sekme5 = st.tabs(
     [
         "📦 Stok Durumu",
@@ -386,4 +386,72 @@ with sekme4:
                 mik = silinen["Miktar"]
                 st.session_state["stoklar"][m][r] += mik
             st.success(
-                f"
+                f"✅ Seçilen işlem silindi ve {silinen['Model']} ({silinen['Renk']})"
+                f" stoğa {silinen['Miktar']} adet geri eklendi!"
+            )
+            st.rerun()
+    else:
+        st.info("Henüz kaydedilmiş bir işlem geçmişi bulunmuyor.")
+
+with sekme5:
+    st.subheader("📥 Excel/CSV Rapor İndirme, Yedekleme ve Resmi Tutanak")
+
+    if len(st.session_state["gecmis"]) > 0:
+        df_gecmis = pd.DataFrame(st.session_state["gecmis"])
+
+        zaman_etiketi = datetime.now().strftime("%Y%m%d_%H%M%S")
+        csv_dosya_adi = f"kaman_toner_raporu_{zaman_etiketi}.csv"
+
+        csv_veri = df_gecmis.to_csv(index=False).encode("utf-8")
+        st.download_button(
+            label="📥 Tüm Geçmişi Excel/CSV Olarak İndir (Yedek Al)",
+            data=csv_veri,
+            file_name=csv_dosya_adi,
+            mime="text/csv",
+        )
+
+        st.markdown("---")
+        st.subheader("📄 Resmi Toner Teslim Tutanağı Oluştur")
+        secilen_islem_index = st.selectbox(
+            "Tutanak oluşturulacak dağıtımı seçin:",
+            range(len(st.session_state["gecmis"])),
+            format_func=lambda x: (
+                f"{st.session_state['gecmis'][x]['Tarih']} -"
+                f" {st.session_state['gecmis'][x]['Birim']} -"
+                f" {st.session_state['gecmis'][x]['Model']}"
+                f" ({st.session_state['gecmis'][x]['Renk']})"
+            ),
+            key="tutanak_select",
+        )
+
+        secilen_kayit = st.session_state["gecmis"][secilen_islem_index]
+
+        tutanak_html = """
+            <div style="background: rgba(30, 41, 59, 0.9); padding: 25px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); color: white;">
+                <h3 style="text-align: center; margin-bottom: 5px;">KAMAN BELEDİYESİ</h3>
+                <h4 style="text-align: center; color: #94a3b8; margin-top: 0;">BİLGİ İŞLEM BİRİMİ - TONER TESLİM TUTANAĞI</h4>
+                <hr style="border-color: rgba(255,255,255,0.2);">
+                <p><b>Tarih / Saat:</b> {tarih}</p>
+                <p><b>Teslim Alan Birim:</b> {birim}</p>
+                <p><b>Malzeme Detayı:</b> {model} - {renk} ({miktar} Adet)</p>
+                <p><b>Açıklama:</b> {not_bilgisi}</p>
+                <br><br>
+                <div style="display: flex; justify-content: space-between; margin-top: 40px;">
+                    <div><b>Teslim Eden (Bilgi İşlem):</b><br><br>İmza: ........................</div>
+                    <div><b>Teslim Alan (Birim Yetkilisi):</b><br><br>İmza: ........................</div>
+                </div>
+            </div>
+            """.format(
+            tarih=secilen_kayit["Tarih"],
+            birim=secilen_kayit["Birim"],
+            model=secilen_kayit["Model"],
+            renk=secilen_kayit["Renk"],
+            miktar=secilen_kayit["Miktar"],
+            not_bilgisi=(
+                secilen_kayit["Not"] if secilen_kayit["Not"] else "-"
+            ),
+        )
+
+        st.markdown(tutanak_html, unsafe_allow_html=True)
+    else:
+        st.info("Henüz bir işlem yapılmadığı için rapor ve tutanak oluşturulamaz.")
