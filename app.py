@@ -182,7 +182,7 @@ st.markdown(
 st.title("🖨️ Kaman Belediyesi - UTAX Toner & Envanter Takip Sistemi")
 st.markdown("---")
 
-# Kritik Stok Alarm Kontrolü (Stoku 3 ve altı olanlar)
+# 1. KRİTİK STOK ALARMI (3 ve altı olanlar için üstte kırmızı uyarı banner'ı)
 kritik_urunler = []
 for m_ad, r_dict in st.session_state["stoklar"].items():
     for r_ad, st_adet in r_dict.items():
@@ -191,30 +191,35 @@ for m_ad, r_dict in st.session_state["stoklar"].items():
 
 if kritik_urunler:
     st.error(
-        "🚨 **Kritik Stok Alarmı:** Aşağıdaki tonerlerin stoku azalmıştır!\n\n"
+        "🚨 **Kritik Stok Alarmı:** Aşağıdaki tonerlerin stoku 3 adedin altına"
+        " düşmüştür!\n\n"
         + "\n".join(kritik_urunler)
     )
 
-# Üst Özet Hesaplamaları
+# Üst Özet Hesaplamaları ve Paneli
 toplam_stok = sum(
     sum(stoklar_dict.values())
     for stoklar_dict in st.session_state["stoklar"].values()
 )
 toplam_yazici_modeli = len(st.session_state["stoklar"])
 
-col_m1, col_m2, col_m3 = st.columns(3)
+col_m1, col_m2, col_m3, col_m4 = st.columns(4)
 col_m1.metric("📦 Toplam Dolu Toner Stoğu", toplam_stok)
 col_m2.metric("🖨️ Takip Edilen Model", f"{toplam_yazici_modeli} Çeşit")
 col_m3.metric("🏢 Kayıtlı Birim Dağıtımı", len(st.session_state["gecmis"]))
+if col_m4.button("🔒 Oturumu Kapat"):
+    st.session_state["giris_yapildi"] = False
+    st.rerun()
 
 st.markdown("---")
 
-menu = st.sidebar.selectbox(
-    "Menü", ["Stok Durumu & Dağıtım", "İşlem Geçmişi & Raporlar"]
+# BAŞLIKLAR (YAN YANA / YATAY SEKMELER) - Kaman Belediyesi yazısının altında
+sekme1, sekme2 = st.tabs(
+    ["📦 Stok Durumu & Manuel İşlemler", "📋 İşlem Geçmişi, Rapor & Tutanak"]
 )
 
-if menu == "Stok Durumu & Dağıtım":
-    st.subheader("📦 Mevcut Stok Durumu (Yazıcı Bazlı Detaylar)")
+with sekme1:
+    st.subheader("📊 Mevcut Stok Durumu (Yazıcı Bazlı Detaylar)")
     st.markdown(
         "Yazıcı adlarının üzerine tıklayarak detaylı stok durumlarını"
         " görebilirsiniz."
@@ -234,7 +239,7 @@ if menu == "Stok Durumu & Dağıtım":
             st.dataframe(df_model, use_container_width=True, hide_index=True)
 
     st.markdown("---")
-    st.subheader("🔄 Stok Ekleme / Çıkarma ve Birime Teslim")
+    st.subheader("🔄 Manuel Stok Ekleme / Çıkarma ve Birime Teslim")
 
     with st.form("stok_islem_formu"):
         c1, c2, c3, c4 = st.columns(4)
@@ -254,11 +259,13 @@ if menu == "Stok Durumu & Dağıtım":
             miktar = st.number_input("Miktar", min_value=1, value=1, step=1)
 
         birim_adi = st.text_input(
-            "Teslim Edilen Birim", placeholder="Örn: Yazı İşleri Müdürlüğü"
+            "Teslim Edilen Birim",
+            placeholder="Örn: Yazı İşleri Müdürlüğü vb.",
         )
-        cihaz_serino = st.text_input(
-            "Cihaz Lokasyonu / Seri No (İsteğe bağlı)",
-            placeholder="Örn: Oda 203 / Cihaz #4",
+        # 2. CİHAZ / LOKASYON TAKİBİ
+        cihaz_lokasyon = st.text_input(
+            "Cihaz Lokasyonu / Seri No",
+            placeholder="Örn: Oda 203 / Cihaz Seri No veya IP",
         )
         islem_notu = st.text_input("Açıklama / Not", placeholder="İsteğe bağlı")
 
@@ -288,7 +295,7 @@ if menu == "Stok Durumu & Dağıtım":
                         "İşlem": islem_tipi,
                         "Birim": birim_adi if birim_adi else "Belirtilmedi",
                         "Cihaz/Lokasyon": (
-                            cihaz_serino if cihaz_serino else "-"
+                            cihaz_lokasyon if cihaz_lokasyon else "-"
                         ),
                         "Not": islem_notu,
                     }
@@ -301,17 +308,17 @@ if menu == "Stok Durumu & Dağıtım":
                 else:
                     st.error(f"❌ Yetersiz stok! Mevcut stok: {mevcut}")
 
-elif menu == "İşlem Geçmişi & Raporlar":
-    st.subheader("📋 Birim Dağıtım ve İşlem Geçmişi")
+with sekme2:
+    st.subheader("📋 Birim Dağıtım ve İşlem Geçmişi (Yedekleme & Rapor)")
 
     if len(st.session_state["gecmis"]) > 0:
         df_gecmis = pd.DataFrame(st.session_state["gecmis"])
         st.dataframe(df_gecmis, use_container_width=True, hide_index=True)
 
-        # Excel / CSV Rapor İndirme
+        # Excel / CSV Rapor ve Yedekleme Butonu
         csv_veri = df_gecmis.to_csv(index=False).encode("utf-8")
         st.download_button(
-            label="📥 Raporu Excel/CSV Olarak İndir (Yedekle)",
+            label="📥 Raporu Excel/CSV Olarak İndir (Yedek Al)",
             data=csv_veri,
             file_name=(
                 "kaman_toner_raporu_"
@@ -321,9 +328,10 @@ elif menu == "İşlem Geçmişi & Raporlar":
         )
 
         st.markdown("---")
-        st.subheader("📄 Resmi Toner Teslim Tutanağı Öngörünümü")
+        # 3. RESMİ TESLİM TUTANAĞI GÖRÜNTÜLEME
+        st.subheader("📄 Resmi Toner Teslim Tutanağı")
         secilen_islem_index = st.selectbox(
-            "Tutanak oluşturulacak işlemi seçin:",
+            "Tutanak oluşturulacak dağıtımı seçin:",
             range(len(st.session_state["gecmis"])),
             format_func=lambda x: (
                 f"{st.session_state['gecmis'][x]['Tarih']} -"
@@ -335,12 +343,11 @@ elif menu == "İşlem Geçmişi & Raporlar":
 
         secilen_kayit = st.session_state["gecmis"][secilen_islem_index]
 
-        # Tutanak Kutusu
         st.markdown(
             f"""
             <div style="background: rgba(30, 41, 59, 0.9); padding: 25px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); color: white;">
                 <h3 style="text-align: center; margin-bottom: 5px;">KAMAN BELEDİYESİ</h3>
-                <h4 style="text-align: center; color: #94a3b8; margin-top: 0;">BİLGİ İŞLEM BİRİMİ - TONER TESLIM TUTANAĞI</h4>
+                <h4 style="text-align: center; color: #94a3b8; margin-top: 0;">BİLGİ İŞLEM BİRİMİ - TONER TESLİM TUTANAĞI</h4>
                 <hr style="border-color: rgba(255,255,255,0.2);">
                 <p><b>Tarih / Saat:</b> {secilen_kayit['Tarih']}</p>
                 <p><b>Teslim Alan Birim:</b> {secilen_kayit['Birim']}</p>
@@ -357,9 +364,7 @@ elif menu == "İşlem Geçmişi & Raporlar":
             unsafe_allow_html=True,
         )
     else:
-        st.info("Henüz bir birime toner çıkışı yapılmamış.")
-
-st.markdown("---")
-if st.button("🔒 Güvenli Oturumu Kapat"):
-    st.session_state["giris_yapildi"] = False
-    st.rerun()
+        st.info(
+            "Henüz bir birime toner çıkışı yapılmadığı için tutanak veya rapor"
+            " oluşturulamadı."
+        )
