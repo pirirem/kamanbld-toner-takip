@@ -17,9 +17,8 @@ ADMIN_SIFRE = "1924.Blds"
 if "giris_yapildi" not in st.session_state:
     st.session_state["giris_yapildi"] = False
 
-# Veri Yapısı Başlangıcı (Tablo Yapısına Uygun)
+# Veri Yapısı Başlangıcı (Gönderdiğin görsele uygun tablo yapısı)
 if "stoklar" not in st.session_state:
-    # Her model için renklerin dolu ve boş adetleri
     st.session_state["stoklar"] = {
         "UTAX 2507": {
             "Siyah": {"Dolu": 10, "Boş": 2},
@@ -122,7 +121,6 @@ if not st.session_state["giris_yapildi"]:
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Logoyu güvenli bir şekilde okuyup HTML içine ortalıyoruz
     try:
         with open("logo.png", "rb") as f:
             logo_bytes = f.read()
@@ -172,6 +170,23 @@ if not st.session_state["giris_yapildi"]:
     st.stop()
 
 # --- GİRİŞ YAPILDIKTAN SONRAKİ ANA UYGULAMA ALANI ---
+# Tablo başlıklarını ve hücrelerini ortalamak için özel CSS
+st.markdown(
+    """
+    <style>
+    /* DataFrame tablo başlık ve hücrelerini ortalama */
+    thead tr th {
+        text-align: center !important;
+        justify-content: center !important;
+    }
+    tbody tr td {
+        text-align: center !important;
+    }
+    </style>
+""",
+    unsafe_allow_html=True,
+)
+
 st.title("🖨️ Kaman Belediyesi - UTAX Toner & Envanter Takip Sistemi")
 st.markdown("---")
 
@@ -207,9 +222,9 @@ if menu == "Stok Durumu & Dağıtım":
         " görebilirsiniz."
     )
 
-    # Ekrandaki gibi her yazıcı için tablo oluşturuyoruz
+    # Gönderdiğin görsele tam uygun expander ve ortalanmış tablo yapısı
     for model, renkler in st.session_state["stoklar"].items():
-        with st.expander(f"🖨️ {model} - Stok Detayları", expanded=True):
+        with st.expander(f"🖨️ {model} - Stok Detayları", expanded=False):
             tablo_verisi = []
             for renk, durumlar in renkler.items():
                 tablo_verisi.append({
@@ -259,7 +274,6 @@ if menu == "Stok Durumu & Dağıtım":
         submit_islem = st.form_submit_button("İşlemi Gerçekleştir")
 
         if submit_islem:
-            # Kontrol et: Eğer modelde Boş toner yoksa ama Boş seçildiyse uyarı ver
             if (
                 secilen_durum == "Boş"
                 and secilen_durum
