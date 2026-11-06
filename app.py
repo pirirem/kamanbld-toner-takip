@@ -1,8 +1,11 @@
 import base64
+import pandas as pd
 import streamlit as st
 
-# [Buraya uygulamanın geri kalan import ve başlangıç kodları gelecek]
+# Yönetici parolası
+ADMIN_SIFRE = "1924.Blds"
 
+# Oturum durumu kontrolü
 if "giris_yapildi" not in st.session_state:
     st.session_state["giris_yapildi"] = False
 
@@ -122,3 +125,11 @@ if not st.session_state["giris_yapildi"]:
                     st.error("❌ Hatalı parola! Lütfen tekrar deneyin.")
 
     st.stop()
+
+# --- GİRİŞ YAPILDIKTAN SONRAKİ ANA UYGULAMA ALANI ---
+st.title("🖨️ Kaman Belediyesi - UTAX Toner & Envanter Takip Sistemi")
+st.success("Oturum başarıyla açıldı. Yönetim paneline hoş geldiniz.")
+
+if st.button("Oturumu Kapat"):
+    st.session_state["giris_yapildi"] = False
+    st.rerun()
