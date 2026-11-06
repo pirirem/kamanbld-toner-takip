@@ -213,14 +213,14 @@ if col_m4.button("🔒 Oturumu Kapat"):
 
 st.markdown("---")
 
-# YATAY SEKMELER
+# YATAY SEKMELER (Daha kısa ve ekrana tam sığan başlıklar)
 sekme1, sekme2, sekme3, sekme4, sekme5 = st.tabs(
     [
-        "📦 Mevcut Stok Durumu",
-        "🔄 Manuel Stok Ekle & Birime Ver",
-        "📊 Yıl İçinde Sarfiyat Grafikleri",
-        "📋 İşlem Geçmişi & Arama",
-        "📥 Excel Rapor & Tutanak",
+        "📦 Stok Durumu",
+        "🔄 İşlem & Ver",
+        "📊 Grafikler",
+        "📋 Geçmiş & Arama",
+        "📥 Rapor & Tutanak",
     ]
 )
 
@@ -301,3 +301,89 @@ with sekme2:
                         "Birim": birim_adi if birim_adi else "Belirtilmedi",
                         "Not": islem_notu,
                     }
+                    st.session_state["gecmis"].insert(0, kayit)
+                    st.success(
+                        "✅ İşlem başarılı! Güncel stok:"
+                        f" {st.session_state['stoklar'][secilen_model][secilen_renk]}"
+                    )
+                    st.rerun()
+                else:
+                    st.error(f"❌ Yetersiz stok! Mevcut stok: {mevcut}")
+
+with sekme3:
+    st.subheader("📊 Yıl İçinde Birim ve Model Bazlı Sarfiyat Grafikleri")
+    if len(st.session_state["gecmis"]) > 0:
+        df_grafik = pd.DataFrame(st.session_state["gecmis"])
+        df_verilen = df_grafik[df_grafik["İşlem"].str.contains("Birime Ver")]
+
+        if not df_verilen.empty:
+            col_g1, col_g2 = st.columns(2)
+            with col_g1:
+                st.markdown("##### 🏢 Birimlere Göre Yıllık Tüketim")
+                birim_ozet = df_verilen.groupby("Birim")["Miktar"].sum()
+                st.bar_chart(birim_ozet)
+            with col_g2:
+                st.markdown("##### 🖨️ Model Bazlı Yıllık Tüketim")
+                model_ozet = df_verilen.groupby("Model")["Miktar"].sum()
+                st.bar_chart(model_ozet)
+        else:
+            st.info(
+                "Henüz birimlere toner çıkışı yapılmadığı için grafik"
+                " oluşturulamadı."
+            )
+    else:
+        st.info("Grafik oluşturulabilmesi için işlem geçmişi gereklidir.")
+
+with sekme4:
+    st.subheader("📋 İşlem Geçmişi, Arama ve Hatalı Kayıt Geri Alma")
+
+    if len(st.session_state["gecmis"]) > 0:
+        arama_kelimesi = st.text_input(
+            "🔍 Geçmiş Kayıtlarda Ara (Birim, Model, Renk veya Not):",
+            placeholder="Örn: Yazı İşleri, Siyah...",
+            key="arama_input",
+        )
+
+        df_gecmis = pd.DataFrame(st.session_state["gecmis"])
+
+        if arama_kelimesi:
+            mask = df_gecmis.apply(
+                lambda row: row.astype(str)
+                .str.contains(arama_kelimesi, case=False)
+                .any(),
+                axis=1,
+            )
+            df_gosterilen = df_gecmis[mask]
+        else:
+            df_gosterilen = df_gecmis
+
+        st.dataframe(df_gosterilen, use_container_width=True, hide_index=True)
+
+        st.markdown("---")
+        st.markdown("#### 🗑️ Hatalı İşlemi Sil / Geri Al")
+        st.markdown(
+            "Yanlış yapılan bir işlemi listeden seçerek silebilir ve stoğu"
+            " otomatik geri yükleyebilirsiniz."
+        )
+
+        silinecek_index = st.selectbox(
+            "Silmek (geri almak) istediğiniz geçmiş işlemini seçin:",
+            range(len(st.session_state["gecmis"])),
+            format_func=lambda x: (
+                f"{st.session_state['gecmis'][x]['Tarih']} -"
+                f" {st.session_state['gecmis'][x]['Birim']} -"
+                f" {st.session_state['gecmis'][x]['Model']}"
+                f" ({st.session_state['gecmis'][x]['Renk']} - Adet:"
+                f" {st.session_state['gecmis'][x]['Miktar']})"
+            ),
+        )
+
+        if st.button("Seçilen Hatalı İşlemi Sil ve Stoğu Geri Yükle"):
+            silinen = st.session_state["gecmis"].pop(silinecek_index)
+            if "Birime Ver" in silinen["İşlem"]:
+                m = silinen["Model"]
+                r = silinen["Renk"]
+                mik = silinen["Miktar"]
+                st.session_state["stoklar"][m][r] += mik
+            st.success(
+                f"
