@@ -17,27 +17,37 @@ ADMIN_SIFRE = "1924.Blds"
 if "giris_yapildi" not in st.session_state:
     st.session_state["giris_yapildi"] = False
 
-# Veri Yapısı Başlangıcı (Stoklar ve İşlem Geçmişi)
+# Veri Yapısı Başlangıcı (Tablo Yapısına Uygun)
 if "stoklar" not in st.session_state:
+    # Her model için renklerin dolu ve boş adetleri
     st.session_state["stoklar"] = {
-        "2507": {
-            "Cyan": 5,
-            "Magenta": 5,
-            "Yellow": 5,
-            "Black": 5,
-            "Boş Toner": 2,
+        "UTAX 2507": {
+            "Siyah": {"Dolu": 10, "Boş": 2},
+            "Mavi (Cyan)": {"Dolu": 10, "Boş": 2},
+            "Kırmızı (Magenta)": {"Dolu": 10, "Boş": 2},
+            "Sarı (Yellow)": {"Dolu": 10, "Boş": 2},
         },
-        "2508": {
-            "Cyan": 4,
-            "Magenta": 4,
-            "Yellow": 4,
-            "Black": 4,
-            "Boş Toner": 1,
+        "UTAX 2508": {
+            "Siyah": {"Dolu": 8, "Boş": 3},
+            "Mavi (Cyan)": {"Dolu": 8, "Boş": 3},
+            "Kırmızı (Magenta)": {"Dolu": 8, "Boş": 3},
+            "Sarı (Yellow)": {"Dolu": 8, "Boş": 3},
         },
-        "3062": {"Cyan": 6, "Magenta": 6, "Yellow": 6, "Black": 6},
-        "4035": {"Black": 10},
-        "4531": {"Black": 8},
-        "4532": {"Black": 7},
+        "UTAX 3062": {
+            "Siyah": {"Dolu": 6, "Boş": 1},
+            "Mavi (Cyan)": {"Dolu": 6, "Boş": 1},
+            "Kırmızı (Magenta)": {"Dolu": 6, "Boş": 1},
+            "Sarı (Yellow)": {"Dolu": 6, "Boş": 1},
+        },
+        "UTAX 4035": {
+            "Siyah": {"Dolu": 12, "Boş": 4},
+        },
+        "UTAX 4531": {
+            "Siyah": {"Dolu": 9, "Boş": 2},
+        },
+        "UTAX 4532": {
+            "Siyah": {"Dolu": 7, "Boş": 3},
+        },
     }
 
 if "gecmis" not in st.session_state:
@@ -45,8 +55,8 @@ if "gecmis" not in st.session_state:
 
 # --- GİRİŞ EKRANI ---
 if not st.session_state["giris_yapildi"]:
-  st.markdown(
-      """
+    st.markdown(
+        """
         <style>
         .stApp {
             background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
@@ -107,55 +117,59 @@ if not st.session_state["giris_yapildi"]:
         }
         </style>
     """,
-      unsafe_allow_html=True,
-  )
-
-  st.markdown("<br>", unsafe_allow_html=True)
-
-  # Logoyu güvenli bir şekilde okuyup HTML içine ortalıyoruz
-  try:
-    with open("logo.png", "rb") as f:
-      logo_bytes = f.read()
-    logo_base64 = base64.b64encode(logo_bytes).decode()
-    logo_element = f'<img src="data:image/png;base64,{logo_base64}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid rgba(255, 255, 255, 0.3); box-shadow: 0 6px 20px rgba(37, 99, 235, 0.5);">'
-  except:
-    logo_element = '<div class="emblem-badge">1924</div>'
-
-  col1, col2, col3 = st.columns([1, 1.3, 1])
-  with col2:
-    st.markdown(
-        f"""
-        <div class="login-container">
-            <div style="display: flex; justify-content: center; margin-bottom: 15px;">
-                {logo_element}
-            </div>
-            <div class="login-title">Kaman Belediyesi</div>
-            <div class="login-subtitle">Bilgi İşlem & Envanter Yönetimi</div>
-        </div>
-        """,
         unsafe_allow_html=True,
     )
 
-    with st.form("giris_formu"):
-      girilen_sifre = st.text_input(
-          "Yönetici Parolası", type="password", placeholder="Parolanızı girin..."
-      )
-      kabul_et = st.checkbox(
-          "Güvenlik şartlarını ve kullanım koşullarını okudum."
-      )
-      submit_btn = st.form_submit_button("Güvenli Oturum Aç")
+    st.markdown("<br>", unsafe_allow_html=True)
 
-      if submit_btn:
-        if not kabul_et:
-          st.warning("⚠️ Devam etmek için lütfen onay kutusunu işaretleyin.")
-        elif girilen_sifre == ADMIN_SIFRE:
-          st.session_state["giris_yapildi"] = True
-          st.success("✅ Yetki onaylandı, yönlendiriliyorsunuz...")
-          st.rerun()
-        else:
-          st.error("❌ Hatalı parola! Lütfen tekrar deneyin.")
+    # Logoyu güvenli bir şekilde okuyup HTML içine ortalıyoruz
+    try:
+        with open("logo.png", "rb") as f:
+            logo_bytes = f.read()
+        logo_base64 = base64.b64encode(logo_bytes).decode()
+        logo_element = f'<img src="data:image/png;base64,{logo_base64}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid rgba(255, 255, 255, 0.3); box-shadow: 0 6px 20px rgba(37, 99, 235, 0.5);">'
+    except:
+        logo_element = '<div class="emblem-badge">1924</div>'
 
-  st.stop()
+    col1, col2, col3 = st.columns([1, 1.3, 1])
+    with col2:
+        st.markdown(
+            f"""
+            <div class="login-container">
+                <div style="display: flex; justify-content: center; margin-bottom: 15px;">
+                    {logo_element}
+                </div>
+                <div class="login-title">Kaman Belediyesi</div>
+                <div class="login-subtitle">Bilgi İşlem & Envanter Yönetimi</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        with st.form("giris_formu"):
+            girilen_sifre = st.text_input(
+                "Yönetici Parolası",
+                type="password",
+                placeholder="Parolanızı girin...",
+            )
+            kabul_et = st.checkbox(
+                "Güvenlik şartlarını ve kullanım koşullarını okudum."
+            )
+            submit_btn = st.form_submit_button("Güvenli Oturum Aç")
+
+            if submit_btn:
+                if not kabul_et:
+                    st.warning(
+                        "⚠️ Devam etmek için lütfen onay kutusunu işaretleyin."
+                    )
+                elif girilen_sifre == ADMIN_SIFRE:
+                    st.session_state["giris_yapildi"] = True
+                    st.success("✅ Yetki onaylandı, yönlendiriliyorsunuz...")
+                    st.rerun()
+                else:
+                    st.error("❌ Hatalı parola! Lütfen tekrar deneyin.")
+
+    st.stop()
 
 # --- GİRİŞ YAPILDIKTAN SONRAKİ ANA UYGULAMA ALANI ---
 st.title("🖨️ Kaman Belediyesi - UTAX Toner & Envanter Takip Sistemi")
@@ -163,11 +177,12 @@ st.markdown("---")
 
 # Üst Özet Hesaplamaları
 toplam_dolu = sum(
-    sum(v for k, v in renkler.items() if k != "Boş Toner")
+    sum(durumlar["Dolu"] for durumlar in renkler.values())
     for renkler in st.session_state["stoklar"].values()
 )
 toplam_bos = sum(
-    renkler.get("Boş Toner", 0) for renkler in st.session_state["stoklar"].values()
+    sum(durumlar.get("Boş", 0) for durumlar in renkler.values())
+    for renkler in st.session_state["stoklar"].values()
 )
 toplam_yazici_modeli = len(st.session_state["stoklar"])
 
@@ -186,91 +201,137 @@ menu = st.sidebar.selectbox(
 )
 
 if menu == "Stok Durumu & Dağıtım":
-  st.subheader("📊 Yazıcı Model Bazlı Toner Stokları")
-
-  # Yazıcıları kartlar / expanderlar halinde gösterelim
-  for model, renkler in st.session_state["stoklar"].items():
-    with st.expander(f"🖨️ UTAX {model} Serisi Stok Detayları", expanded=True):
-      cols = st.columns(len(renkler))
-      idx = 0
-      for renk, adet in renkler.items():
-        with cols[idx]:
-          st.metric(label=renk, value=f"{adet} Adet")
-        idx += 1
-
-  st.markdown("---")
-  st.subheader("🔄 Stok Ekleme / Çıkarma ve Birime Teslim")
-
-  with st.form("stok_islem_formu"):
-    c1, c2, c3, c4 = st.columns(4)
-    with c1:
-      secilen_model = st.selectbox(
-          "Yazıcı Modeli", list(st.session_state["stoklar"].keys())
-      )
-    with c2:
-      secilen_renk = st.selectbox(
-          "Toner Rengi / Türü",
-          list(st.session_state["stoklar"][secilen_model].keys()),
-      )
-    with c3:
-      islem_tipi = st.selectbox(
-          "İşlem Tipi", ["Stok Ekle (+)", "Birime Ver / Düş (-)", "Stok Düş (-)"]
-      )
-    with c4:
-      miktar = st.number_input("Miktar", min_value=1, value=1, step=1)
-
-    birim_adi = st.text_input(
-        "Teslim Edilen Birim (Birim Ver seçeneği için zorunludur)",
-        placeholder="Örn: Yazı İşleri Müdürlüğü",
+    st.subheader("📦 Mevcut Stok Durumu (Yazıcı Bazlı Detaylar)")
+    st.markdown(
+        "Yazıcı adlarının üzerine tıklayarak detaylı stok durumlarını"
+        " görebilirsiniz."
     )
-    islem_notu = st.text_input("Açıklama / Not", placeholder="İsteğe bağlı not")
 
-    submit_islem = st.form_submit_button("İşlemi Gerçekleştir")
+    # Ekrandaki gibi her yazıcı için tablo oluşturuyoruz
+    for model, renkler in st.session_state["stoklar"].items():
+        with st.expander(f"🖨️ {model} - Stok Detayları", expanded=True):
+            tablo_verisi = []
+            for renk, durumlar in renkler.items():
+                tablo_verisi.append({
+                    "Model": model,
+                    "Renk": renk,
+                    "Durum": "Dolu",
+                    "Stok": durumlar["Dolu"],
+                })
+                if "Boş" in durumlar:
+                    tablo_verisi.append({
+                        "Model": model,
+                        "Renk": renk,
+                        "Durum": "Boş",
+                        "Stok": durumlar["Boş"],
+                    })
 
-    if submit_islem:
-      mevcut_stok = st.session_state["stoklar"][secilen_model][secilen_renk]
-      if "Ekle" in islem_tipi:
-        st.session_state["stoklar"][secilen_model][secilen_renk] += miktar
-        st.success(f"✅ {secilen_model} - {secilen_renk} stoğa {miktar} adet eklendi.")
-        st.rerun()
-      else:
-        if mevcut_stok >= miktar:
-          st.session_state["stoklar"][secilen_model][secilen_renk] -= miktar
-          # Geçmişe kaydet
-          kayit = {
-              "Tarih": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-              "Model": secilen_model,
-              "Renk/Tür": secilen_renk,
-              "Miktar": miktar,
-              "İşlem": islem_tipi,
-              "Birim": birim_adi if birim_adi else "Belirtilmedi",
-              "Not": islem_notu,
-          }
-          st.session_state["gecmis"].insert(0, kayit)
-          st.success(f"✅ İşlem başarılı! Güncel stok: {st.session_state['stoklar'][secilen_model][secilen_renk]}")
-          st.rerun()
-        else:
-          st.error(f"❌ Yetersiz stok! Mevcut stok: {mevcut_stok}")
+            df_model = pd.DataFrame(tablo_verisi)
+            st.dataframe(df_model, use_container_width=True, hide_index=True)
+
+    st.markdown("---")
+    st.subheader("🔄 Stok Ekleme / Çıkarma ve Birime Teslim")
+
+    with st.form("stok_islem_formu"):
+        c1, c2, c3, c4, c5 = st.columns(5)
+        with c1:
+            secilen_model = st.selectbox(
+                "Yazıcı Modeli", list(st.session_state["stoklar"].keys())
+            )
+        with c2:
+            secilen_renk = st.selectbox(
+                "Renk", list(st.session_state["stoklar"][secilen_model].keys())
+            )
+        with c3:
+            secilen_durum = st.selectbox("Durum", ["Dolu", "Boş"])
+        with c4:
+            islem_tipi = st.selectbox(
+                "İşlem Tipi", ["Stok Ekle (+)", "Birime Ver / Düş (-)"]
+            )
+        with c5:
+            miktar = st.number_input("Miktar", min_value=1, value=1, step=1)
+
+        birim_adi = st.text_input(
+            "Teslim Edilen Birim", placeholder="Örn: Yazı İşleri Müdürlüğü"
+        )
+        islem_notu = st.text_input("Açıklama / Not", placeholder="İsteğe bağlı")
+
+        submit_islem = st.form_submit_button("İşlemi Gerçekleştir")
+
+        if submit_islem:
+            # Kontrol et: Eğer modelde Boş toner yoksa ama Boş seçildiyse uyarı ver
+            if (
+                secilen_durum == "Boş"
+                and secilen_durum
+                not in st.session_state["stoklar"][secilen_model][secilen_renk]
+            ):
+                st.error(
+                    f"❌ {secilen_model} modelinde boş toner takibi"
+                    " bulunmamaktadır."
+                )
+            else:
+                mevcut = st.session_state["stoklar"][secilen_model][
+                    secilen_renk
+                ][secilen_durum]
+                if "Ekle" in islem_tipi:
+                    st.session_state["stoklar"][secilen_model][secilen_renk][
+                        secilen_durum
+                    ] += miktar
+                    st.success(
+                        f"✅ {secilen_model} ({secilen_renk} - {secilen_durum})"
+                        f" stoğa {miktar} adet eklendi."
+                    )
+                    st.rerun()
+                else:
+                    if mevcut >= miktar:
+                        st.session_state["stoklar"][secilen_model][secilen_renk][
+                            secilen_durum
+                        ] -= miktar
+                        kayit = {
+                            "Tarih": datetime.now().strftime(
+                                "%Y-%m-%d %H:%M:%S"
+                            ),
+                            "Model": secilen_model,
+                            "Renk": secilen_renk,
+                            "Durum": secilen_durum,
+                            "Miktar": miktar,
+                            "İşlem": islem_tipi,
+                            "Birim": birim_adi if birim_adi else "Belirtilmedi",
+                            "Not": islem_notu,
+                        }
+                        st.session_state["gecmis"].insert(0, kayit)
+                        st.success(
+                            "✅ İşlem başarılı! Güncel stok:"
+                            f" {st.session_state['stoklar'][secilen_model][secilen_renk][secilen_durum]}"
+                        )
+                        st.rerun()
+                    else:
+                        st.error(
+                            f"❌ Yetersiz stok! Mevcut {secilen_durum} stok:"
+                            f" {mevcut}"
+                        )
 
 elif menu == "İşlem Geçmişi & Raporlar":
-  st.subheader("📋 Birim Dağıtım ve İşlem Geçmişi")
+    st.subheader("📋 Birim Dağıtım ve İşlem Geçmişi")
 
-  if len(st.session_state["gecmis"]) > 0:
-    df_gecmis = pd.DataFrame(st.session_state["gecmis"])
-    st.dataframe(df_gecmis, use_container_width=True)
+    if len(st.session_state["gecmis"]) > 0:
+        df_gecmis = pd.DataFrame(st.session_state["gecmis"])
+        st.dataframe(df_gecmis, use_container_width=True, hide_index=True)
 
-    # Excel / CSV Rapor İndirme Butonu
-    csv_veri = df_gecmis.to_csv(index=False).encode("utf-8")
-    st.download_button(
-        label="📥 Raporu Excel/CSV Olarak İndir",
-        data=csv_veri,
-        file_name=f"kaman_toner_raporu_{datetime.now().strftime('%Y%m%d')}.csv",
-        mime="text/csv",
-    )
-  else:
-    st.info("Henüz bir birime toner çıkışı yapılmamış.")
+        csv_veri = df_gecmis.to_csv(index=False).encode("utf-8")
+        st.download_button(
+            label="📥 Raporu Excel/CSV Olarak İndir",
+            data=csv_veri,
+            file_name=(
+                "kaman_toner_raporu_"
+                f"{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
+            ),
+            mime="text/csv",
+        )
+    else:
+        st.info("Henüz bir birime toner çıkışı yapılmamış.")
 
 st.markdown("---")
 if st.button("🔒 Güvenli Oturumu Kapat"):
-  st.session_state["giris_yapildi"] = False
-  st.rerun()
+    st.session_state["giris_yapildi"] = False
+    st.rerun()
