@@ -130,23 +130,25 @@ if not st.session_state["giris_yapildi"]:
 
   st.markdown("<br>", unsafe_allow_html=True)
 
-  col1, col2, col3 = st.columns([1, 1.3, 1])
-  with col2:
-    # Amblemi ve kutuyu tek bir şık yapı içinde tam ortalıyoruz
-    st.markdown("""
-        <div style="display: flex; justify-content: center; margin-bottom: 10px;">
-    """, unsafe_allow_html=True)
-    
-    try:
-        st.image("logo.png", width=85)
-    except:
-        st.markdown('<div class="emblem-badge">1924</div>', unsafe_allow_html=True)
-        
-    st.markdown("</div>", unsafe_allow_html=True)
+  import base64
 
+# Logoyu güvenli bir şekilde okuyup HTML uyumlu hale getiriyoruz
+try:
+    with open("logo.png", "rb") as f:
+        logo_bytes = f.read()
+    logo_base64 = base64.b64encode(logo_bytes).decode()
+    logo_element = f'<img src="data:image/png;base64,{logo_base64}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid rgba(255, 255, 255, 0.3); box-shadow: 0 6px 20px rgba(37, 99, 235, 0.5);">'
+except:
+    logo_element = '<div class="emblem-badge">1924</div>'
+
+col1, col2, col3 = st.columns([1, 1.3, 1])
+with col2:
     st.markdown(
-        """
+        f"""
         <div class="login-container">
+            <div style="display: flex; justify-content: center; margin-bottom: 15px;">
+                {logo_element}
+            </div>
             <div class="login-title">Kaman Belediyesi</div>
             <div class="login-subtitle">Bilgi İşlem & Envanter Yönetimi</div>
         </div>
