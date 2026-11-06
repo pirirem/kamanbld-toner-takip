@@ -17,30 +17,30 @@ ADMIN_SIFRE = "1924.Blds"
 if "giris_yapildi" not in st.session_state:
     st.session_state["giris_yapildi"] = False
 
-# Veri Yapısı Başlangıcı (Boş tonersiz, sadece renk ve stoklar)
+# Veri Yapısı Başlangıcı (Stoklar sıfırlandı, kullanıcı kendisi belirleyecek)
 if "stoklar" not in st.session_state:
     st.session_state["stoklar"] = {
         "UTAX 2507": {
-            "Siyah": 10,
-            "Mavi (Cyan)": 10,
-            "Kırmızı (Magenta)": 10,
-            "Sarı (Yellow)": 10,
+            "Siyah": 0,
+            "Mavi (Cyan)": 0,
+            "Kırmızı (Magenta)": 0,
+            "Sarı (Yellow)": 0,
         },
         "UTAX 2508": {
-            "Siyah": 8,
-            "Mavi (Cyan)": 8,
-            "Kırmızı (Magenta)": 8,
-            "Sarı (Yellow)": 8,
+            "Siyah": 0,
+            "Mavi (Cyan)": 0,
+            "Kırmızı (Magenta)": 0,
+            "Sarı (Yellow)": 0,
         },
         "UTAX 3062": {
-            "Siyah": 6,
-            "Mavi (Cyan)": 6,
-            "Kırmızı (Magenta)": 6,
-            "Sarı (Yellow)": 6,
+            "Siyah": 0,
+            "Mavi (Cyan)": 0,
+            "Kırmızı (Magenta)": 0,
+            "Sarı (Yellow)": 0,
         },
-        "UTAX 4035": {"Siyah": 12},
-        "UTAX 4531": {"Siyah": 9},
-        "UTAX 4532": {"Siyah": 7},
+        "UTAX 4035": {"Siyah": 0},
+        "UTAX 4531": {"Siyah": 0},
+        "UTAX 4532": {"Siyah": 0},
     }
 
 if "gecmis" not in st.session_state:
@@ -213,13 +213,14 @@ if col_m4.button("🔒 Oturumu Kapat"):
 
 st.markdown("---")
 
-# YATAY SEKMELER
-sekme1, sekme2, sekme3, sekme4 = st.tabs(
+# YATAY SEKMELER (Ayrı ayrı başlıklar halinde)
+sekme1, sekme2, sekme3, sekme4, sekme5 = st.tabs(
     [
         "📦 Mevcut Stok Durumu",
         "🔄 Manuel Stok Ekle & Birime Ver",
         "📊 Yıl İçinde Sarfiyat Grafikleri",
-        "📋 İşlem Geçmişi, Arama, Rapor & Tutanak",
+        "📋 İşlem Geçmişi & Arama",
+        "📥 Excel Rapor & Tutanak",
     ]
 )
 
@@ -341,21 +342,18 @@ with sekme3:
         st.info("Grafik oluşturulabilmesi için işlem geçmişi gereklidir.")
 
 with sekme4:
-    st.subheader(
-        "📋 İşlem Geçmişi, Arama, Excel Raporlama & Resmi Tutanak"
-    )
+    st.subheader("📋 İşlem Geçmişi, Arama ve Hatalı Kayıt Geri Alma")
 
     if len(st.session_state["gecmis"]) > 0:
-        # Arama ve Filtreleme Kutusu
         arama_kelimesi = st.text_input(
             "🔍 Geçmiş Kayıtlarda Ara (Birim, Model, Renk veya Not):",
             placeholder="Örn: Yazı İşleri, Siyah...",
+            key="arama_input",
         )
 
         df_gecmis = pd.DataFrame(st.session_state["gecmis"])
 
         if arama_kelimesi:
-            # Büyük/küçük harf duyarsız arama filtresi
             mask = df_gecmis.apply(
                 lambda row: row.astype(str)
                 .str.contains(arama_kelimesi, case=False)
@@ -368,10 +366,50 @@ with sekme4:
 
         st.dataframe(df_gosterilen, use_container_width=True, hide_index=True)
 
-        # Excel / CSV Rapor ve Yedekleme Butonu
+        st.markdown("---")
+        st.markdown("#### 🗑️ Hatalı İşlemi Sil / Geri Al")
+        st.markdown(
+            "Yanlış yapılan bir işlemi listeden seçerek silebilir ve stoğu"
+            " otomatik geri yükleyebilirsiniz."
+        )
+
+        silinecek_index = st.selectbox(
+            "Silmek (geri almak) istediğiniz geçmiş işlemini seçin:",
+            range(len(st.session_state["gecmis"])),
+            format_func=lambda x: (
+                f"{st.session_state['gecmis'][x]['Tarih']} -"
+                f" {st.session_state['gecmis'][x]['Birim']} -"
+                f" {st.session_state['gecmis'][x]['Model']}"
+                f" ({st.session_state['gecmis'][x]['Renk']} - Adet:"
+                f" {st.session_state['gecmis'][x]['Miktar']})"
+            ),
+        )
+
+        if st.button("Seçilen Hatalı İşlemi Sil ve Stoğu Geri Yükle"):
+            silinen = st.session_state["gecmis"].pop(silinecek_index)
+            # Eğer silinen işlem birime verme (düşme) ise stoğa geri ekle
+            if "Birime Ver" in silinen["İşlem"]:
+                m = silinen["Model"]
+                r = silinen["Renk"]
+                mik = silinen["Miktar"]
+                st.session_state["stoklar"][m][r] += mik
+            st.success(
+                f"✅ Seçilen işlem silindi ve {silinen['Model']} ({silinen['Renk']})"
+                f" stoğa {silinen['Miktar']} adet geri eklendi!"
+            )
+            st.rerun()
+    else:
+        st.info("Henüz kaydedilmiş bir işlem geçmişi bulunmuyor.")
+
+with sekme5:
+    st.subheader("📥 Excel/CSV Rapor İndirme, Yedekleme ve Resmi Tutanak")
+
+    if len(st.session_state["gecmis"]) > 0:
+        df_gecmis = pd.DataFrame(st.session_state["gecmis"])
+
         csv_veri = df_gecmis.to_csv(index=False).encode("utf-8")
         st.download_button(
-            label="📥 Raporu Excel/CSV Olarak İndir (Yedek Al)",
+            label="📥 Tüm Geçmişi Excel/CSV Olarak İndir (Yedek Al)",
             data=csv_veri,
             file_name=(
                 "kaman_toner_raporu_"
@@ -381,44 +419,40 @@ with sekme4:
         )
 
         st.markdown("---")
-        st.subheader("📄 Resmi Toner Teslim Tutanağı")
-        if not df_gosterilen.empty:
-            secilen_islem_index = st.selectbox(
-                "Tutanak oluşturulacak dağıtımı seçin:",
-                df_gosterilen.index.tolist(),
-                format_func=lambda x: (
-                    f"{df_gecmis.loc[x, 'Tarih']} -"
-                    f" {df_gecmis.loc[x, 'Birim']} -"
-                    f" {df_gecmis.loc[x, 'Model']} ({df_gecmis.loc[x, 'Renk']})"
-                ),
-            )
-
-            secilen_kayit = df_gecmis.loc[secilen_islem_index]
-
-            st.markdown(
-                f"""
-                <div style="background: rgba(30, 41, 59, 0.9); padding: 25px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); color: white;">
-                    <h3 style="text-align: center; margin-bottom: 5px;">KAMAN BELEDİYESİ</h3>
-                    <h4 style="text-align: center; color: #94a3b8; margin-top: 0;">BİLGİ İŞLEM BİRİMİ - TONER TESLİM TUTANAĞI</h4>
-                    <hr style="border-color: rgba(255,255,255,0.2);">
-                    <p><b>Tarih / Saat:</b> {secilen_kayit['Tarih']}</p>
-                    <p><b>Teslim Alan Birim:</b> {secilen_kayit['Birim']}</p>
-                    <p><b>Cihaz / Lokasyon:</b> {secilen_kayit['Cihaz/Lokasyon']}</p>
-                    <p><b>Malzeme Detayı:</b> {secilen_kayit['Model']} - {secilen_kayit['Renk']} ({secilen_kayit['Miktar']} Adet)</p>
-                    <p><b>Açıklama:</b> {secilen_kayit['Not'] if secilen_kayit['Not'] else '-'}</p>
-                    <br><br>
-                    <div style="display: flex; justify-content: space-between; margin-top: 40px;">
-                        <div><b>Teslim Eden (Bilgi İşlem):</b><br><br>İmza: ........................</div>
-                        <div><b>Teslim Alan (Birim Yetkilisi):</b><br><br>İmza: ........................</div>
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-        else:
-            st.info("Arama kriterine uygun kayıt bulunamadı.")
-    else:
-        st.info(
-            "Henüz bir birime toner çıkışı yapılmadığı için işlem geçmişi,"
-            " arama ve tutanak bulunmuyor."
+        st.subheader("📄 Resmi Toner Teslim Tutanağı Oluştur")
+        secilen_islem_index = st.selectbox(
+            "Tutanak oluşturulacak dağıtımı seçin:",
+            range(len(st.session_state["gecmis"])),
+            format_func=lambda x: (
+                f"{st.session_state['gecmis'][x]['Tarih']} -"
+                f" {st.session_state['gecmis'][x]['Birim']} -"
+                f" {st.session_state['gecmis'][x]['Model']}"
+                f" ({st.session_state['gecmis'][x]['Renk']})"
+            ),
+            key="tutanak_select",
         )
+
+        secilen_kayit = st.session_state["gecmis"][secilen_islem_index]
+
+        st.markdown(
+            f"""
+            <div style="background: rgba(30, 41, 59, 0.9); padding: 25px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.2); color: white;">
+                <h3 style="text-align: center; margin-bottom: 5px;">KAMAN BELEDİYESİ</h3>
+                <h4 style="text-align: center; color: #94a3b8; margin-top: 0;">BİLGİ İŞLEM BİRİMİ - TONER TESLİM TUTANAĞI</h4>
+                <hr style="border-color: rgba(255,255,255,0.2);">
+                <p><b>Tarih / Saat:</b> {secilen_kayit['Tarih']}</p>
+                <p><b>Teslim Alan Birim:</b> {secilen_kayit['Birim']}</p>
+                <p><b>Cihaz / Lokasyon:</b> {secilen_kayit['Cihaz/Lokasyon']}</p>
+                <p><b>Malzeme Detayı:</b> {secilen_kayit['Model']} - {secilen_kayit['Renk']} ({secilen_kayit['Miktar']} Adet)</p>
+                <p><b>Açıklama:</b> {secilen_kayit['Not'] if secilen_kayit['Not'] else '-'}</p>
+                <br><br>
+                <div style="display: flex; justify-content: space-between; margin-top: 40px;">
+                    <div><b>Teslim Eden (Bilgi İşlem):</b><br><br>İmza: ........................</div>
+                    <div><b>Teslim Alan (Birim Yetkilisi):</b><br><br>İmza: ........................</div>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    else:
+        st.info("Henüz bir işlem yapılmadığı için rapor ve tutanak oluşturulamaz.")
