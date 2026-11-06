@@ -132,12 +132,18 @@ if not st.session_state["giris_yapildi"]:
 
   col1, col2, col3 = st.columns([1, 1.3, 1])
   with col2:
-    # GitHub'a yüklediğimiz logo.png dosyasını doğrudan ekrana basıyoruz
+    # Amblemi ve kutuyu tek bir şık yapı içinde tam ortalıyoruz
+    st.markdown("""
+        <div style="display: flex; justify-content: center; margin-bottom: 10px;">
+    """, unsafe_allow_html=True)
+    
     try:
-        st.image("logo.png", width=90)
+        st.image("logo.png", width=85)
     except:
         st.markdown('<div class="emblem-badge">1924</div>', unsafe_allow_html=True)
         
+    st.markdown("</div>", unsafe_allow_html=True)
+
     st.markdown(
         """
         <div class="login-container">
