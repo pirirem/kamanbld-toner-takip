@@ -132,17 +132,21 @@ if not st.session_state["giris_yapildi"]:
 
   col1, col2, col3 = st.columns([1, 1.3, 1])
   with col2:
+    # GitHub'a yüklediğimiz logo.png dosyasını doğrudan ekrana basıyoruz
+    try:
+        st.image("logo.png", width=90)
+    except:
+        st.markdown('<div class="emblem-badge">1924</div>', unsafe_allow_html=True)
+        
     st.markdown(
         """
         <div class="login-container">
-            <div class="emblem-badge">1924</div>
             <div class="login-title">Kaman Belediyesi</div>
             <div class="login-subtitle">Bilgi İşlem & Envanter Yönetimi</div>
         </div>
         """,
         unsafe_allow_html=True,
     )
-
     with st.form("giris_formu"):
       girilen_sifre = st.text_input(
           "Yönetici Parolası",
